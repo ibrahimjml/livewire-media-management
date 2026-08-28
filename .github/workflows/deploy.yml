@@ -5,9 +5,9 @@ on:
     branches: [dev]
 
 env:
-  AWS_REPOSITORY: livewire_media
+  AWS_REPOSITORY: media/livewire-media
   AWS_REGION: us-east-1
-  AWS_ECR_REGISTRY: 213462345060.dkr.ecr.us-east-1.amazonaws.com/livewire-media
+  AWS_ECR_REGISTRY: 213462345060.dkr.ecr.us-east-1.amazonaws.com
 
 jobs:
   deploy:
