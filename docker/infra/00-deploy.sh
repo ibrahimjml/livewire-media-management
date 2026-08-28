@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-cd /opt/livewire-pos
+cd /opt/livewire_media
 
 echo "🔄 Handling host environment setup..."
 if [ ! -f .env ]; then
@@ -11,6 +11,15 @@ if [ ! -f .env ]; then
         touch .env
     fi
 fi
+
+#  Inject DB variables passed down by GitHub secrets
+echo "⚙️ Injecting app key, database configurations securely..."
+sed -i "s|^APP_KEY=.*|APP_KEY=$APP_KEY|" .env
+sed -i "s|^DB_HOST=.*|DB_HOST=$DB_HOST|" .env
+sed -i "s|^DB_DATABASE=.*|DB_DATABASE=$DB_DATABASE|" .env
+sed -i "s|^DB_USERNAME=.*|DB_USERNAME=$DB_USERNAME|" .env
+sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=$DB_PASSWORD|" .env
+sed -i "s|^DB_ROOT_PASSWORD=.*|DB_ROOT_PASSWORD=$DB_ROOT_PASSWORD|" .env
 
 #  Install AWS CLI on VPS if it doesn't exist
 if ! command -v aws >/dev/null 2>&1; then
@@ -34,9 +43,6 @@ sudo ECR_REGISTRY="$AWS_ECR_REGISTRY" docker compose -f docker-compose.dev.yml -
 
 echo " Restarting application containers..."
 sudo ECR_REGISTRY="$AWS_ECR_REGISTRY" docker compose -f docker-compose.dev.yml --env-file .env up -d --remove-orphans
-
-echo " Generating key ..."
-sudo ECR_REGISTRY="$AWS_ECR_REGISTRY" docker compose -f docker-compose.dev.yml --env-file .env exec -T app php artisan key:generate
 
 echo " Running migrations inside active container..."
 sudo ECR_REGISTRY="$AWS_ECR_REGISTRY" docker compose -f docker-compose.dev.yml --env-file .env exec -T app php artisan migrate --force

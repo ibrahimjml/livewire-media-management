@@ -5,6 +5,7 @@ on:
     branches: [dev]
 
 env:
+  APP_NAME: livewire_media
   AWS_REPOSITORY: media/livewire-media
   AWS_REGION: us-east-1
   AWS_ECR_REGISTRY: 213462345060.dkr.ecr.us-east-1.amazonaws.com
@@ -51,7 +52,9 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          script: sudo mkdir -p /opt/${{ env.AWS_REPOSITORY }}/infra
+          script: |
+            sudo mkdir -p /opt/${{ env.APP_NAME }}
+            sudo chown -R ${{ secrets.VPS_USERNAME }}:${{ secrets.VPS_USERNAME }} /opt/${{ env.APP_NAME }}
 
       - name: Upload production configuration files
         uses: appleboy/scp-action@v0.1.7
@@ -60,8 +63,8 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: "docker-compose.dev.yml,.env.production.example,infra/01-deploy.sh"
-          target: /opt/${{ env.AWS_REPOSITORY }}
+          source: "docker-compose.dev.yml,.env.production.example,docker/infra/00-deploy.sh"
+          target: /opt/${{ env.APP_NAME }}
 
       # Execute deployment on the VPS with AWS Credentials
       - name: Execute deployment script
@@ -70,13 +73,20 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ env.AWS_REGION }}
-          ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
+          AWS_ECR_REGISTRY: ${{ env.AWS_ECR_REGISTRY }}
+          APP_KEY: ${{ secrets.APP_KEY}}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME}}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD}}
+
         with:
-          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_REGION,ECR_REGISTRY
+          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_REGION,AWS_ECR_REGISTRY,APP_KEY,DB_HOST,DB_DATABASE,DB_USERNAME,DB_PASSWORD,DB_ROOT_PASSWORD
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            chmod +x /opt/${{ env.AWS_REPOSITORY }}/infra/00-deploy.sh
-            /bin/sh /opt/${{ env.AWS_REPOSITORY }}/infra/00-deploy.sh
+            chmod +x /opt/${{ env.APP_NAME }}/docker/infra/00-deploy.sh
+            /bin/sh /opt/${{ env.APP_NAME }}/docker/infra/00-deploy.sh
