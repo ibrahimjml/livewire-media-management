@@ -1,0 +1,43 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/DockerFile
+      target: development
+    image: livewire-pos-app:local
+    ports: ["8080:80"]
+    volumes: [".:/var/www/html"]
+    depends_on:
+      mysql: { condition: service_healthy }
+    networks: [laravel]
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports: ["3307:3306"]
+    volumes: ["mysql-data:/var/lib/mysql"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      retries: 20
+      timeout: 5s
+    networks: [laravel]
+  phpmyadmin:
+    image: phpmyadmin:5-apache
+    profiles: [tools]
+    ports: ["8081:80"]
+    environment: { PMA_HOST: mysql, PMA_PORT: 3306 }
+    depends_on: [mysql]
+    networks: [laravel]
+  node:
+    image: node:22-alpine
+    working_dir: /var/www/html
+    volumes: [".:/var/www/html"]
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
+    ports: ["5173:5173"]
+    networks: [laravel]
+networks: { laravel: {} }
+volumes: { mysql-data: {} }

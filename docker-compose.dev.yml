@@ -1,0 +1,14 @@
+services:
+  app:
+    image: ${AWS_ECR_REGISTRY:?Set AWS_ECR_REGISTRY}/${AWS_REPOSITORY:?Set AWS_REPOSITORY}:latest
+    restart: unless-stopped
+    env_file: .env
+    ports: ["${APP_PORT:-8080}:80"]
+    volumes: ["app-storage:/var/www/html/storage"]
+    networks: [laravel]
+    environment:
+      - PHP_MEMORY_LIMIT=512M
+
+networks: { laravel: {} }
+volumes:
+  app-storage: {}
